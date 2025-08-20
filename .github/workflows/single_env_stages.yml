@@ -1,0 +1,54 @@
+name: Multi-Stage Deployment
+
+on:
+  workflow_dispatch:   # manual trigger (you can change to push/pull_request if needed)
+
+jobs:
+  deploy-dev:
+    name: Deploy to Dev
+    runs-on: ubuntu-latest
+    environment: dev   # must match your GitHub environment name
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Dev
+        run: echo "Deploying application to DEV environment..."
+
+
+  deploy-uat:
+    name: Deploy web apps
+    runs-on: ubuntu-latest
+    environment: uat
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to uat
+        run: echo "Deploying application to uat environment..." 
+
+  deploy-uat:
+    name: Deploy function apps
+    runs-on: ubuntu-latest
+    needs :Deploy web apps
+    environment: uat
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to uat
+        run: echo "Deploying application to uat environment..."    
+
+  deploy-uat:
+    name: Deploy database
+    runs-on: ubuntu-latest
+    needs :Deploy function apps
+    environment: uat
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to uat
+        run: echo "Deploying application to uat environment..."       
+   
+
