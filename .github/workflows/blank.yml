@@ -1,0 +1,40 @@
+name: Multi-Stage Deployment
+
+on:
+  workflow_dispatch:   # manual trigger (you can change to push/pull_request if needed)
+
+jobs:
+  deploy-dev:
+    name: Deploy to Dev
+    runs-on: ubuntu-latest
+    environment: dev   # must match your GitHub environment name
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Dev
+        run: echo "Deploying application to DEV environment..."
+
+  deploy-qa:
+    name: Deploy to QA
+    runs-on: ubuntu-latest
+    needs: deploy-dev
+    environment: qa
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to QA
+        run: echo "Deploying application to QA environment..."
+
+  deploy-prod:
+    name: Deploy to Prod
+    runs-on: ubuntu-latest
+    needs: deploy-qa
+    environment: prod
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Prod
+        run: echo "Deploying application to PROD environment..."
