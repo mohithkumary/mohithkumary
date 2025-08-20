@@ -1,4 +1,4 @@
-name: Multi-Stage Deployment
+name: single_env_stages
 
 on:
   workflow_dispatch:
