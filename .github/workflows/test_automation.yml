@@ -1,0 +1,48 @@
+name: automatio_triggre's
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Select environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - qa
+          - uat
+          - prod
+      branch:
+        description: 'Select branch to deploy'
+        required: true
+        default: 'main'
+      tag:
+        description: 'Enter tag version (optional)'
+        required: false
+
+jobs:
+  deploy:
+    name: Deploy Application
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}   # dynamically choose environment
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}   # dynamically choose branch or tag
+          
+      - name: Show selected environment
+        run: echo "Deploying to environment ${{ inputs.environment }}"
+
+      - name: Show selected branch/tag
+        run: echo "Deploying from branch/tag ${{ inputs.branch }}"
+
+      - name: Deploy Application
+        run: |
+          echo "Starting deployment..."
+          if [ -n "${{ inputs.tag }}" ]; then
+            echo "Deploying version ${{ inputs.tag }}"
+          else
+            echo "Deploying latest code from ${{ inputs.branch }}"
+          fi
