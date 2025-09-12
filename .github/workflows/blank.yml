@@ -2,6 +2,16 @@ name: Multi-Stage Deployment
 
 on:
   workflow_dispatch:   # manual trigger (you can change to push/pull_request if needed)
+    inputs:
+      environment:
+        description: 'Select environment'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - qa
+          - uat
 
 jobs:
   deploy-dev:
