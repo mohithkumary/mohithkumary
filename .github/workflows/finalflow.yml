@@ -146,7 +146,18 @@ jobs:
                 }
             }
             Write-Host "`n=== Workflow Status ===" -ForegroundColor Yellow
-            $currentStatus | Format-List
+            foreach ($wf in $currentStatus) {
+                Write-Host "SrNo: $($wf.SrNo)" -ForegroundColor Cyan
+                Write-Host "Repo: $($wf.Repo)" -ForegroundColor Cyan
+                Write-Host "Workflow: $($wf.Workflow)" -ForegroundColor Cyan
+                Write-Host "Ref: $($wf.Ref)" -ForegroundColor Cyan
+                Write-Host "Environment: $($wf.Environment)" -ForegroundColor Cyan
+                Write-Host "Status: $($wf.Status)" -ForegroundColor Cyan
+                Write-Host "Conclusion: $($wf.Conclusion)" -ForegroundColor Cyan
+                Write-Host "Url: $($wf.Url)" -ForegroundColor Cyan
+                Write-Host "---------------------------------------------" -ForegroundColor DarkYellow
+            }
+
             
             $allFinished = $currentStatus | Where-Object { $_.Status -ne "Completed" -and $_.Status -ne "Failed to trigger" -and $_.Status -ne "Error fetching status" } | Measure-Object | Select-Object -ExpandProperty Count
             if ($allFinished -eq 0) {
