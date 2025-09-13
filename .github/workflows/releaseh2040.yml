@@ -11,10 +11,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup PowerShell
-        uses: actions/setup-powershell@v2
-        with:
-          pwsh-version: '7.3'
+      - name: Trigger and Monitor Workflows
+        shell: pwsh
 
       - name: Trigger and Monitor Workflows
         shell: pwsh
