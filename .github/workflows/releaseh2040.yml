@@ -1,0 +1,73 @@
+name: Trigger and Monitor Workflows
+
+on:
+  workflow_dispatch:  # Allows manual trigger for testing
+
+jobs:
+  monitor:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PowerShell
+        uses: actions/setup-powershell@v2
+        with:
+          pwsh-version: '7.3'
+
+      - name: Trigger and Monitor Workflows
+        shell: pwsh
+        env:
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}  # Store your GitHub token in secrets
+        run: |
+          # Define token from environment
+          $token = $env:PAT_TOKEN
+
+          # Define CSV file path (adjust if stored in subfolder)
+          $csvPath = "${{ github.workspace }}\release.csv"
+
+          # Import CSV
+          $entries = Import-Csv -Path $csvPath
+
+          # Initialize counter
+          $counter = 1
+
+          # Loop through each entry
+          foreach ($entry in $entries) {
+              $repo = $entry.repo.Trim()
+              $workflow = $entry.workflow.Trim()
+              $ref = $entry.ref.Trim()
+              $refType = $entry.refType.Trim().ToLower()
+              $environment = $entry.environment.Trim()
+
+              Write-Host "`nTriggering '$workflow' on '$repo' using $refType '$ref' with environment '$environment'" -ForegroundColor Cyan
+
+              $url = "https://api.github.com/repos/$repo/actions/workflows/$workflow/dispatches"
+
+              $headers = @{
+                  Authorization = "Bearer $token"
+                  Accept        = "application/vnd.github+json"
+                  "User-Agent"  = "PowerShell"
+              }
+
+              $body = @{
+                  ref = $ref
+                  inputs = @{
+                      environment = $environment
+                  }
+              } | ConvertTo-Json -Depth 3
+
+              try {
+                  Invoke-RestMethod -Uri $url -Method POST -Headers $headers -Body $body
+                  Write-Host "✅ [$counter] Triggered $repo - $workflow" -ForegroundColor Green
+              }
+              catch {
+                  $errorMessage = $_.Exception.Message
+                  Write-Host "❌ [$counter] Failed to trigger $repo - $workflow : $errorMessage" -ForegroundColor Red
+              }
+
+              $counter++
+          }
+
+          # You can later add polling logic to check status here or as another step
