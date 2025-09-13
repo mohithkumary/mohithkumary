@@ -1,7 +1,7 @@
 name: Trigger and Monitor Workflows
 
 on:
-  workflow_dispatch:  # Allows manual trigger for testing
+  workflow_dispatch:  # Manual trigger
 
 jobs:
   monitor:
@@ -10,9 +10,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Trigger and Monitor Workflows
-        shell: pwsh
 
       - name: Trigger and Monitor Workflows
         shell: pwsh
@@ -67,5 +64,3 @@ jobs:
 
               $counter++
           }
-
-          # You can later add polling logic to check status here or as another step
