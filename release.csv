@@ -1,5 +1,5 @@
-repo	workflow	ref	refType	environment
-mohithkumary/mohithkumary	blank.yml	v1.2	tag	uat
-mohithkumary/mohithkumary	blank.yml	main	branch	qa
-mohithkumary/mohithkumary	blank.yml	v1.1	tag	dev
-mohithkumary/mohithkumary	blank.yml	main	branch	prod
+repo,workflow,ref,refType,environment
+mohithkumary/mohithkumary,blank.yml,v1.2,tag,uat
+mohithkumary/mohithkumary,blank.yml,main,branch,qa
+mohithkumary/mohithkumary,blank.yml,v1.1,tag,dev
+mohithkumary/mohithkumary,blank.yml,main,branch,prod
