@@ -1,0 +1,160 @@
+name: Final_flow
+
+on:
+  workflow_dispatch:
+
+jobs:
+  trigger-monitor:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Run Trigger and Monitor Script
+      shell: pwsh
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        # GitHub Token Input
+        $token = "${env:GITHUB_TOKEN}"
+
+        # Path to CSV file in the repo
+        $csvPath = "./workflows.csv"
+
+        # Read CSV
+        $entries = Import-Csv -Path $csvPath
+
+        # Store workflow details
+        $workflowList = @()
+        $counter = 1
+
+        foreach ($entry in $entries) {
+            $repo = $entry.repo.Trim()
+            $workflow = $entry.workflow.Trim()
+            $ref = $entry.ref.Trim()
+            $environment = $entry.environment.Trim()
+
+            Write-Host "Triggering $workflow on $repo using $ref in $environment" -ForegroundColor Cyan
+
+            $url = "https://api.github.com/repos/$repo/actions/workflows/$workflow/dispatches"
+            $headers = @{
+                Authorization = "Bearer $token"
+                Accept        = "application/vnd.github+json"
+                "User-Agent"  = "PowerShell"
+            }
+            $body = @{
+                ref = $ref
+                inputs = @{ environment = $environment }
+            } | ConvertTo-Json -Depth 3
+
+            try {
+                Invoke-RestMethod -Uri $url -Method POST -Headers $headers -Body $body
+                Write-Host "✅ Triggered $repo - $workflow" -ForegroundColor Green
+
+                Start-Sleep -Seconds 5
+                $runsUrl = "https://api.github.com/repos/$repo/actions/workflows/$workflow/runs?branch=$ref"
+                $runs = Invoke-RestMethod -Uri $runsUrl -Method GET -Headers $headers
+
+                $latestRun = $runs.workflow_runs | Sort-Object created_at -Descending | Select-Object -First 1
+
+                if ($latestRun) {
+                    $workflowList += [PSCustomObject]@{
+                        SrNo        = $counter++
+                        Repo        = $repo
+                        Workflow    = $workflow
+                        Ref         = $ref
+                        Environment = $environment
+                        RunId       = $latestRun.id
+                        Status      = $latestRun.status
+                        Conclusion  = $latestRun.conclusion
+                        Url         = $latestRun.html_url
+                    }
+                }
+            }
+            catch {
+                Write-Host "❌ Failed to trigger $repo - $workflow" -ForegroundColor Red
+                $workflowList += [PSCustomObject]@{
+                    SrNo        = $counter++
+                    Repo        = $repo
+                    Workflow    = $workflow
+                    Ref         = $ref
+                    Environment = $environment
+                    RunId       = ""
+                    Status      = "Failed to trigger"
+                    Conclusion  = ""
+                    Url         = ""
+                }
+            }
+        }
+
+        Write-Host "`n=== Triggered Workflows ===" -ForegroundColor Yellow
+        $workflowList | Format-Table -AutoSize
+
+        while ($true) {
+            Write-Host "`n=== Polling Workflow Statuses ===" -ForegroundColor Cyan
+            $currentStatus = @()
+
+            foreach ($wf in $workflowList) {
+                if ($wf.Status -eq "Failed to trigger") {
+                    $currentStatus += [PSCustomObject]@{
+                        SrNo        = $wf.SrNo
+                        Repo        = $wf.Repo
+                        Workflow    = $wf.Workflow
+                        Ref         = $wf.Ref
+                        Environment = $wf.Environment
+                        Status      = "Failed to trigger"
+                        Conclusion  = ""
+                        Url         = ""
+                    }
+                    continue
+                }
+
+                $statusUrl = "https://api.github.com/repos/$($wf.Repo)/actions/runs/$($wf.RunId)"
+                try {
+                    $run = Invoke-RestMethod -Uri $statusUrl -Method GET -Headers $headers
+                    $mappedStatus = switch ($run.status) {
+                        "in_progress" { "Running" }
+                        "waiting" { "Waiting for approval" }
+                        "completed" { "Completed" }
+                        default { $run.status }
+                    }
+
+                    $currentStatus += [PSCustomObject]@{
+                        SrNo        = $wf.SrNo
+                        Repo        = $wf.Repo
+                        Workflow    = $wf.Workflow
+                        Ref         = $wf.Ref
+                        Environment = $wf.Environment
+                        Status      = $mappedStatus
+                        Conclusion  = $run.conclusion
+                        Url         = $run.html_url
+                    }
+                }
+                catch {
+                    Write-Host "⚠ Failed to fetch status for $($wf.Repo) - $($wf.Workflow)" -ForegroundColor Red
+                    $currentStatus += [PSCustomObject]@{
+                        SrNo        = $wf.SrNo
+                        Repo        = $wf.Repo
+                        Workflow    = $wf.Workflow
+                        Ref         = $wf.Ref
+                        Environment = $wf.Environment
+                        Status      = "Error fetching status"
+                        Conclusion  = ""
+                        Url         = ""
+                    }
+                }
+            }
+
+            Write-Host "`n=== Workflow Status ===" -ForegroundColor Yellow
+            $currentStatus | Format-Table -AutoSize
+
+            $allFinished = $currentStatus | Where-Object { $_.Status -ne "Completed" -and $_.Status -ne "Failed to trigger" -and $_.Status -ne "Error fetching status" } | Measure-Object | Select-Object -ExpandProperty Count
+            if ($allFinished -eq 0) {
+                Write-Host "All workflows have finished processing. Exiting..... Send communication to Test engineers" -ForegroundColor Green
+                break
+            }
+
+            Write-Host "⏳ Waiting for 10 seconds before next check..." -ForegroundColor DarkYellow
+            Start-Sleep -Seconds 10
+        }
