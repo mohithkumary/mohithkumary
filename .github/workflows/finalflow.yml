@@ -79,11 +79,11 @@ jobs:
                     Repo        = $repo
                     Workflow    = $workflow
                     Ref         = $ref
-                    Url         = ""
                     Environment = $environment
                     RunId       = ""
                     Status      = "Failed to trigger"
                     Conclusion  = ""
+                    Url         = ""
                    
                 }
             }
@@ -103,10 +103,10 @@ jobs:
                         Repo        = $wf.Repo
                         Workflow    = $wf.Workflow
                         Ref         = $wf.Ref
-                        Url         = ""
                         Environment = $wf.Environment
                         Status      = "Failed to trigger"
                         Conclusion  = ""
+                        Url         = ""
                         
                     }
                     continue
@@ -127,10 +127,10 @@ jobs:
                         Repo        = $wf.Repo
                         Workflow    = $wf.Workflow
                         Ref         = $wf.Ref
-                        Url         = $run.html_url
                         Environment = $wf.Environment
                         Status      = $mappedStatus
                         Conclusion  = $run.conclusion
+                        Url         = $run.html_url
                         
                     }
                 }
@@ -141,16 +141,16 @@ jobs:
                         Repo        = $wf.Repo
                         Workflow    = $wf.Workflow
                         Ref         = $wf.Ref
-                        Url         = ""
                         Environment = $wf.Environment
                         Status      = "Error fetching status"
                         Conclusion  = ""
+                        Url         = ""
                         
                     }
                 }
             }
             Write-Host "`n=== Workflow Status ===" -ForegroundColor Yellow
-            $currentStatus | Format-Table -AutoSize
+            $currentStatus | Format-Table -AutoSize -Wrap
 
             
             $allFinished = $currentStatus | Where-Object { $_.Status -ne "Completed" -and $_.Status -ne "Failed to trigger" -and $_.Status -ne "Error fetching status" } | Measure-Object | Select-Object -ExpandProperty Count
