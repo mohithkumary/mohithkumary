@@ -1,42 +1,38 @@
 name: Trigger and Monitor Workflows
 
 on:
-  workflow_dispatch:  # Manual trigger
+  workflow_dispatch:
 
 jobs:
-  monitor:
+  trigger-and-monitor:
     runs-on: windows-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Trigger and Monitor Workflows
+      - name: Setup PowerShell
+        uses: actions/setup-powershell@v2
+
+      - name: Run Workflow Monitor
         shell: pwsh
-        env:
-          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}  # Store your GitHub token in secrets
         run: |
-          # Define token from environment
-          $token = $env:PAT_TOKEN
+          $token = "${{ secrets.GITHUB_TOKEN }}"
+          $csvPath = "${{ github.workspace }}/release.csv"
 
-          # Define CSV file path (adjust if stored in subfolder)
-          $csvPath = "${{ github.workspace }}\release.csv"
-
-          # Import CSV
           $entries = Import-Csv -Path $csvPath
 
-          # Initialize counter
-          $counter = 1
+          $triggeredWorkflows = @()
+          $statusTable = @()
 
-          # Loop through each entry
           foreach ($entry in $entries) {
-              $repo = $entry.repo.Trim()
-              $workflow = $entry.workflow.Trim()
-              $ref = $entry.ref.Trim()
-              $refType = $entry.refType.Trim().ToLower()
+              $repo        = $entry.repo.Trim()
+              $workflow    = $entry.workflow.Trim()
+              $ref         = $entry.ref.Trim()
+              $refType     = $entry.refType.Trim().ToLower()
               $environment = $entry.environment.Trim()
 
-              Write-Host "`nTriggering '$workflow' on '$repo' using $refType '$ref' with environment '$environment'" -ForegroundColor Cyan
+              Write-Host "`nTriggering $workflow on $repo using $refType $ref in $environment" -ForegroundColor Cyan
 
               $url = "https://api.github.com/repos/$repo/actions/workflows/$workflow/dispatches"
 
@@ -55,12 +51,96 @@ jobs:
 
               try {
                   Invoke-RestMethod -Uri $url -Method POST -Headers $headers -Body $body
-                  Write-Host "✅ [$counter] Triggered $repo - $workflow" -ForegroundColor Green
+                  Write-Host "✅ Triggered $repo - $workflow"
+                  $triggeredWorkflows += [PSCustomObject]@{
+                      Repo        = $repo
+                      Workflow    = $workflow
+                      Ref         = $ref
+                      Environment = $environment
+                      RunId       = ""
+                      Status      = "queued"
+                      Conclusion  = ""
+                      Url         = ""
+                  }
+              } catch {
+                  Write-Host "❌ Failed to trigger $repo - $workflow: $($_.Exception.Message)" -ForegroundColor Red
               }
-              catch {
-                  $errorMessage = $_.Exception.Message
-                  Write-Host "❌ [$counter] Failed to trigger $repo - $workflow : $errorMessage" -ForegroundColor Red
+          }
+
+          Write-Host "`nMonitoring workflows..."
+
+          do {
+              Start-Sleep -Seconds 5
+              $allCompleted = $true
+
+              $statusTable.Clear()
+
+              foreach ($wf in $triggeredWorkflows) {
+                  if (-not $wf.RunId) {
+                      # Get latest run
+                      $runsUrl = "https://api.github.com/repos/$($wf.Repo)/actions/workflows/$($wf.Workflow)/runs"
+                      try {
+                          $runs = Invoke-RestMethod -Uri $runsUrl -Headers $headers -Method Get
+                          if ($runs.workflow_runs.Count -gt 0) {
+                              $latestRun = $runs.workflow_runs | Where-Object { $_.head_branch -eq $wf.Ref -or $_.head_sha -eq $wf.Ref } | Select-Object -First 1
+                              if ($latestRun) {
+                                  $wf.RunId = $latestRun.id
+                              }
+                          }
+                      } catch {
+                          Write-Host "Error fetching runs for $($wf.Repo): $($_.Exception.Message)"
+                      }
+                  }
+
+                  if ($wf.RunId) {
+                      $runUrl = "https://api.github.com/repos/$($wf.Repo)/actions/runs/$($wf.RunId)"
+                      try {
+                          $run = Invoke-RestMethod -Uri $runUrl -Headers $headers -Method Get
+                          $status = switch ($run.status) {
+                              "in_progress" { "running" }
+                              "queued" { "queued" }
+                              "waiting" { "waiting for approval" }
+                              "completed" { "completed" }
+                              default { $run.status }
+                          }
+                          $conclusion = $run.conclusion
+
+                          if ($status -ne "completed") {
+                              $allCompleted = $false
+                          }
+
+                          $statusTable += [PSCustomObject]@{
+                              Repo        = $wf.Repo
+                              Workflow    = $wf.Workflow
+                              Ref         = $wf.Ref
+                              Environment = $wf.Environment
+                              RunId       = $wf.RunId
+                              Status      = $status
+                              Conclusion  = $conclusion
+                              Url         = $run.html_url
+                          }
+                      } catch {
+                          Write-Host "Error fetching run $($wf.RunId): $($_.Exception.Message)"
+                          $allCompleted = $false
+                      }
+                  } else {
+                      $statusTable += [PSCustomObject]@{
+                          Repo        = $wf.Repo
+                          Workflow    = $wf.Workflow
+                          Ref         = $wf.Ref
+                          Environment = $wf.Environment
+                          RunId       = "N/A"
+                          Status      = "not found"
+                          Conclusion  = ""
+                          Url         = "N/A"
+                      }
+                      $allCompleted = $false
+                  }
               }
 
-              $counter++
-          }
+              Write-Host "`n=== Workflow Status ==="
+              $statusTable | Format-Table -AutoSize
+
+          } while (-not $allCompleted)
+
+          Write-Host "`nAll workflows completed."
