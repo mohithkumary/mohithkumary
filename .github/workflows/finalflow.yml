@@ -20,7 +20,7 @@ jobs:
         $token = "${env:GITHUB_TOKEN}"
 
         # Path to CSV file in the repo
-        $csvPath = "./workflows.csv"
+        $csvPath = "release.csv"
 
         # Read CSV
         $entries = Import-Csv -Path $csvPath
