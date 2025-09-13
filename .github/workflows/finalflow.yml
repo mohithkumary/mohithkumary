@@ -145,11 +145,9 @@ jobs:
                     }
                 }
             }
+            Write-Host "`n=== Workflow Status ===" -ForegroundColor Yellow
+            $currentStatus | Format-Table -AutoSize -Wrap
             
-            Write-Host "`n=== Workflow URLs ===" -ForegroundColor Yellow
-            foreach ($wf in $currentStatus) {
-            Write-Host "$($wf.SrNo): $($wf.Url)" -ForegroundColor Cyan
-            }
             $allFinished = $currentStatus | Where-Object { $_.Status -ne "Completed" -and $_.Status -ne "Failed to trigger" -and $_.Status -ne "Error fetching status" } | Measure-Object | Select-Object -ExpandProperty Count
             if ($allFinished -eq 0) {
                 Write-Host "All workflows have finished processing. Exiting..... Send communication to Test engineers" -ForegroundColor Green
