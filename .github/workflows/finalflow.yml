@@ -79,11 +79,12 @@ jobs:
                     Repo        = $repo
                     Workflow    = $workflow
                     Ref         = $ref
+                    Url         = ""
                     Environment = $environment
                     RunId       = ""
                     Status      = "Failed to trigger"
                     Conclusion  = ""
-                    Url         = ""
+                   
                 }
             }
         }
@@ -102,10 +103,11 @@ jobs:
                         Repo        = $wf.Repo
                         Workflow    = $wf.Workflow
                         Ref         = $wf.Ref
+                        Url         = ""
                         Environment = $wf.Environment
                         Status      = "Failed to trigger"
                         Conclusion  = ""
-                        Url         = ""
+                        
                     }
                     continue
                 }
@@ -125,10 +127,11 @@ jobs:
                         Repo        = $wf.Repo
                         Workflow    = $wf.Workflow
                         Ref         = $wf.Ref
+                        Url         = $run.html_url
                         Environment = $wf.Environment
                         Status      = $mappedStatus
                         Conclusion  = $run.conclusion
-                        Url         = $run.html_url
+                        
                     }
                 }
                 catch {
@@ -138,25 +141,16 @@ jobs:
                         Repo        = $wf.Repo
                         Workflow    = $wf.Workflow
                         Ref         = $wf.Ref
+                        Url         = ""
                         Environment = $wf.Environment
                         Status      = "Error fetching status"
                         Conclusion  = ""
-                        Url         = ""
+                        
                     }
                 }
             }
             Write-Host "`n=== Workflow Status ===" -ForegroundColor Yellow
-            foreach ($wf in $currentStatus) {
-                Write-Host "SrNo: $($wf.SrNo)" -ForegroundColor Cyan
-                Write-Host "Repo: $($wf.Repo)" -ForegroundColor Cyan
-                Write-Host "Workflow: $($wf.Workflow)" -ForegroundColor Cyan
-                Write-Host "Ref: $($wf.Ref)" -ForegroundColor Cyan
-                Write-Host "Environment: $($wf.Environment)" -ForegroundColor Cyan
-                Write-Host "Status: $($wf.Status)" -ForegroundColor Cyan
-                Write-Host "Conclusion: $($wf.Conclusion)" -ForegroundColor Cyan
-                Write-Host "Url: $($wf.Url)" -ForegroundColor Cyan
-                Write-Host "---------------------------------------------" -ForegroundColor DarkYellow
-            }
+            $currentStatus | Format-Table -AutoSize
 
             
             $allFinished = $currentStatus | Where-Object { $_.Status -ne "Completed" -and $_.Status -ne "Failed to trigger" -and $_.Status -ne "Error fetching status" } | Measure-Object | Select-Object -ExpandProperty Count
