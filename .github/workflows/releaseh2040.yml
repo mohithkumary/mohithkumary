@@ -60,7 +60,7 @@ jobs:
                       Url         = ""
                   }
               } catch {
-                  Write-Host "❌ Failed to trigger $repo - $workflow: $($_.Exception.Message)" -ForegroundColor Red
+                  Write-Host "❌ Failed to trigger $repo - $workflow" -ForegroundColor Red
               }
           }
 
