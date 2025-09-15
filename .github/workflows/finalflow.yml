@@ -21,6 +21,7 @@ jobs:
 
         # Path to CSV file in the repo
         $csvPath = "release.csv"
+        $org = "mohithkumary"
 
         # Read CSV
         $entries = Import-Csv -Path $csvPath
@@ -37,7 +38,7 @@ jobs:
 
             Write-Host "Triggering $workflow on $repo using $ref in $environment" -ForegroundColor Cyan
 
-            $url = "https://api.github.com/repos/$repo/actions/workflows/$workflow/dispatches"
+            $url = "https://api.github.com/repos/$org/$repo/actions/workflows/$workflow/dispatches"
             $headers = @{
                 Authorization = "Bearer $token"
                 Accept        = "application/vnd.github+json"
@@ -53,7 +54,7 @@ jobs:
                 Write-Host "✅ Triggered $repo - $workflow" -ForegroundColor Green
 
                 Start-Sleep -Seconds 5
-                $runsUrl = "https://api.github.com/repos/$repo/actions/workflows/$workflow/runs?branch=$ref"
+                $runsUrl = "https://api.github.com/repos/$org/$repo/actions/workflows/$workflow/runs?branch=$ref"
                 $runs = Invoke-RestMethod -Uri $runsUrl -Method GET -Headers $headers
 
                 $latestRun = $runs.workflow_runs | Sort-Object created_at -Descending | Select-Object -First 1
@@ -61,7 +62,7 @@ jobs:
                 if ($latestRun) {
                     $workflowList += [PSCustomObject]@{
                         SrNo        = $counter++
-                        Repo        = $repo
+                        Repo        = "$org/"+$repo
                         Workflow    = $workflow
                         Ref         = $ref
                         Environment = $environment
@@ -76,7 +77,7 @@ jobs:
                 Write-Host "❌ Failed to trigger $repo - $workflow" -ForegroundColor Red
                 $workflowList += [PSCustomObject]@{
                     SrNo        = $counter++
-                    Repo        = $repo
+                    Repo        = "$org/"+$repo
                     Workflow    = $workflow
                     Ref         = $ref
                     Environment = $environment
@@ -150,7 +151,13 @@ jobs:
                 }
             }
             Write-Host "`n=== Workflow Status ===" -ForegroundColor Yellow
-            $currentStatus | Format-Table -AutoSize -Wrap
+            #$currentStatus | Format-Table -AutoSize
+            foreach ($wf in $currentStatus) {
+              Write-Host "### Run #$($wf.SrNo)"
+              Write-Host "- **Status:** $($wf.Status)"
+              Write-Host "- **Conclusion:** $($wf.Conclusion)"
+              Write-Host "- **URL:** $($wf.Url)"
+          }
 
             
             $allFinished = $currentStatus | Where-Object { $_.Status -ne "Completed" -and $_.Status -ne "Failed to trigger" -and $_.Status -ne "Error fetching status" } | Measure-Object | Select-Object -ExpandProperty Count
