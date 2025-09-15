@@ -1,5 +1,5 @@
 repo,workflow,ref,refType,environment
-mohithkumary/mohithkumary,blank.yml,v1.2,tag,uat
-mohithkumary/mohithkumary,blank.yml,main,branch,qa
-mohithkumary/mohithkumary,blank.yml,v1.1,tag,dev
-mohithkumary/mohithkumary,blank.yml,main,branch,prod
+mohithkumary,blank.yml,v1.2,tag,uat
+mohithkumary,blank.yml,main,branch,qa
+mohithkumary,blank.yml,v1.1,tag,dev
+mohithkumary,blank.yml,main,branch,prod
