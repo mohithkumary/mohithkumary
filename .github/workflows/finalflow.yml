@@ -18,10 +18,10 @@ jobs:
       run: |
         # GitHub Token Input
         $token = "${env:GITHUB_TOKEN}"
+        $org = "mohithkumary"
 
         # Path to CSV file in the repo
         $csvPath = "release.csv"
-        $org = "mohithkumary"
 
         # Read CSV
         $entries = Import-Csv -Path $csvPath
@@ -101,10 +101,10 @@ jobs:
                 if ($wf.Status -eq "Failed to trigger") {
                     $currentStatus += [PSCustomObject]@{
                         SrNo        = $wf.SrNo
-                        # Repo        = $wf.Repo
-                        # Workflow    = $wf.Workflow
-                        # Ref         = $wf.Ref
-                        # Environment = $wf.Environment
+                        Repo        = $wf.Repo
+                        Workflow    = $wf.Workflow
+                        Ref         = $wf.Ref
+                        Environment = $wf.Environment
                         Status      = "Failed to trigger"
                         Conclusion  = ""
                         Url         = ""
@@ -125,10 +125,10 @@ jobs:
 
                     $currentStatus += [PSCustomObject]@{
                         SrNo        = $wf.SrNo
-                        # Repo        = $wf.Repo
-                        # Workflow    = $wf.Workflow
-                        # Ref         = $wf.Ref
-                        # Environment = $wf.Environment
+                        Repo        = $wf.Repo
+                        Workflow    = $wf.Workflow
+                        Ref         = $wf.Ref
+                        Environment = $wf.Environment
                         Status      = $mappedStatus
                         Conclusion  = $run.conclusion
                         Url         = $run.html_url
@@ -139,10 +139,10 @@ jobs:
                     Write-Host "⚠ Failed to fetch status for $($wf.Repo) - $($wf.Workflow)" -ForegroundColor Red
                     $currentStatus += [PSCustomObject]@{
                         SrNo        = $wf.SrNo
-                        # Repo        = $wf.Repo
-                        # Workflow    = $wf.Workflow
-                        # Ref         = $wf.Ref
-                        # Environment = $wf.Environment
+                        Repo        = $wf.Repo
+                        Workflow    = $wf.Workflow
+                        Ref         = $wf.Ref
+                        Environment = $wf.Environment
                         Status      = "Error fetching status"
                         Conclusion  = ""
                         Url         = ""
@@ -150,11 +150,8 @@ jobs:
                     }
                 }
             }
-           } 
             Write-Host "`n=== Workflow Status ===" -ForegroundColor Yellow
-            
-            $currentStatus | Format-Table -AutoSize
-            }
+            $currentStatus | Format-Table -AutoSize -Wrap
 
             
             $allFinished = $currentStatus | Where-Object { $_.Status -ne "Completed" -and $_.Status -ne "Failed to trigger" -and $_.Status -ne "Error fetching status" } | Measure-Object | Select-Object -ExpandProperty Count
