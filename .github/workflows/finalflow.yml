@@ -151,8 +151,9 @@ jobs:
                 }
             }
             Write-Host "`n=== Workflow Status ===" -ForegroundColor Yellow
+            {
             $currentStatus | Format-Table -AutoSize
-          }
+            }
 
             
             $allFinished = $currentStatus | Where-Object { $_.Status -ne "Completed" -and $_.Status -ne "Failed to trigger" -and $_.Status -ne "Error fetching status" } | Measure-Object | Select-Object -ExpandProperty Count
