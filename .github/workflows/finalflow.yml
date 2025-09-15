@@ -112,6 +112,7 @@ jobs:
                     }
                     continue
                 }
+                }
 
                 $statusUrl = "https://api.github.com/repos/$($wf.Repo)/actions/runs/$($wf.RunId)"
                 try {
@@ -151,7 +152,7 @@ jobs:
                 }
             }
             Write-Host "`n=== Workflow Status ===" -ForegroundColor Yellow
-            {
+            
             $currentStatus | Format-Table -AutoSize
             }
 
