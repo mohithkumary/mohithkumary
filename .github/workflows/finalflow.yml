@@ -101,10 +101,10 @@ jobs:
                 if ($wf.Status -eq "Failed to trigger") {
                     $currentStatus += [PSCustomObject]@{
                         SrNo        = $wf.SrNo
-                        #Repo        = $wf.Repo
-                        #Workflow    = $wf.Workflow
-                        #Ref         = $wf.Ref
-                        #Environment = $wf.Environment
+                        # Repo        = $wf.Repo
+                        # Workflow    = $wf.Workflow
+                        # Ref         = $wf.Ref
+                        # Environment = $wf.Environment
                         Status      = "Failed to trigger"
                         Conclusion  = ""
                         Url         = ""
@@ -125,10 +125,10 @@ jobs:
 
                     $currentStatus += [PSCustomObject]@{
                         SrNo        = $wf.SrNo
-                        #Repo        = $wf.Repo
-                        #Workflow    = $wf.Workflow
-                        #Ref         = $wf.Ref
-                        #Environment = $wf.Environment
+                        # Repo        = $wf.Repo
+                        # Workflow    = $wf.Workflow
+                        # Ref         = $wf.Ref
+                        # Environment = $wf.Environment
                         Status      = $mappedStatus
                         Conclusion  = $run.conclusion
                         Url         = $run.html_url
@@ -139,10 +139,10 @@ jobs:
                     Write-Host "⚠ Failed to fetch status for $($wf.Repo) - $($wf.Workflow)" -ForegroundColor Red
                     $currentStatus += [PSCustomObject]@{
                         SrNo        = $wf.SrNo
-                        #Repo        = $wf.Repo
-                        #Workflow    = $wf.Workflow
-                        #Ref         = $wf.Ref
-                        #Environment = $wf.Environment
+                        # Repo        = $wf.Repo
+                        # Workflow    = $wf.Workflow
+                        # Ref         = $wf.Ref
+                        # Environment = $wf.Environment
                         Status      = "Error fetching status"
                         Conclusion  = ""
                         Url         = ""
